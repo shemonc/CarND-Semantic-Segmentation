@@ -55,7 +55,8 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     :param num_classes: Number of classes to classify
     :return: The Tensor for the last layer of output
     """
-    vgg_layer7_out = tf.Print(vgg_layer7_out, [tf.shape(vgg_layer7_out)], "vgg-7")
+    #vgg_layer7_out = tf.Print(vgg_layer7_out, [tf.shape(vgg_layer7_out)], "vgg-7")
+
     # 1x1 convolution of vgg encoder layer 7
     conv_1x1 = tf.layers.conv2d(vgg_layer7_out, num_classes, 1, strides=(1,1),
                         padding='same',
@@ -80,12 +81,14 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
                  kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
     #vgg_layer4_out_1x1 = tf.Print(vgg_layer4_out_1x1 , [tf.shape(vgg_layer4_out_1x1)],
-                                     "pool4 + conv1x1")
+    #                                 "pool4 + conv1x1")
 
     # skip connection, matrix element-wise addition
     output_32_skip = tf.add(output_32, vgg_layer4_out_1x1)
+
     #output_32_skip = tf.Print(output_32_skip, [tf.shape(output_32_skip)],
-                                                                "Skip with pool4")
+    #                                                            "Skip with pool4")
+
     #upsample
     output_16 = tf.layers.conv2d_transpose(output_32_skip, num_classes, 4,
                 strides=(2, 2), padding='same',
@@ -101,12 +104,14 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
                 kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
     #vgg_layer3_out_1x1 = tf.Print(vgg_layer3_out_1x1,
-                            [tf.shape(vgg_layer3_out_1x1)], "pool3 + conv1x1")
+    #                        [tf.shape(vgg_layer3_out_1x1)], "pool3 + conv1x1")
 
     # skip connection, matrix element-wise addition
     output_16_skip = tf.add(output_16, vgg_layer3_out_1x1)
+
     #output_16_skip = tf.Print(output_16_skip, [tf.shape(output_16_skip)],
-                                "Skip with pool3")
+    #                            "Skip with pool3")
+
     output_8 = tf.layers.conv2d_transpose(output_16_skip, num_classes, 16,
                 strides=(8, 8),
                 padding='same',
@@ -169,16 +174,16 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
         for image, label in get_batches_fn(batch_size):
             print("Batch {} image {} label {}".format(batch_size, len(image), len(label)))
             _, loss = sess.run([train_op, cross_entropy_loss],
-                    feed_dict={input_image:image, correct_label:label,
+            feed_dict={input_image:image, correct_label:label,
                                keep_prob:0.5, learning_rate:0.0009})
-            print("Loss = {}".format(loss))
+            print("Loss = {:.3}".format(loss))
 
 tests.test_train_nn(train_nn)
 
 
 def run():
     num_classes = 2
-    epochs = 50
+    epochs = 48
     batch_size = 5
 
     image_shape = (160, 576)
@@ -208,7 +213,7 @@ def run():
         nn_last_layer = layers(l3, l4, l7, num_classes)
 
         #4D tensor
-        correct_label = tf.placeholder(tf.float32,
+        correct_label = tf.placeholder(tf.int32,
                                         shape=(None, None, None, num_classes),
                                         name='correct_label')
         learning_rate = tf.placeholder(tf.float32, name='learning_rate')
