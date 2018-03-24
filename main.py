@@ -137,10 +137,11 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     #  4D to 2D
     logits = tf.reshape(nn_last_layer, (-1, num_classes))
     correct_label = tf.reshape(correct_label, (-1, num_classes))
-    cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=logits,
-                                                     labels=correct_label)
-    l2_loss = tf.losses.get_regularization_loss(name='total_regularization_loss')
-    loss_operation = tf.reduce_mean(cross_entropy + l2_loss)
+    cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits
+                                    (logits=logits, labels=correct_label))
+    l2_loss = tf.reduce_mean(tf.losses.get_regularization_loss
+                                (name='total_regularization_loss'))
+    loss_operation = cross_entropy + 0.01*l2_loss
     optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
     training_operation = optimizer.minimize(loss_operation)
     return (logits, training_operation, loss_operation)
@@ -182,7 +183,7 @@ tests.test_train_nn(train_nn)
 
 def run():
     num_classes = 2
-    epochs = 48
+    epochs = 30 #12 #6
     batch_size = 5
 
     image_shape = (160, 576)
