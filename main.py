@@ -137,15 +137,13 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     #  4D to 2D
     logits = tf.reshape(nn_last_layer, (-1, num_classes))
     correct_label = tf.reshape(correct_label, (-1, num_classes))
-
-    cross_entropy_loss = tf.reduce_mean(
-                         tf.nn.softmax_cross_entropy_with_logits(
-                                                   logits=logits, labels=correct_label))
+    cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=logits,
+                                                     labels=correct_label)
     l2_loss = tf.losses.get_regularization_loss(name='total_regularization_loss')
-    cross_entropy_loss += l2_loss
+    loss_operation = tf.reduce_mean(cross_entropy + l2_loss)
     optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
-    training_operation = optimizer.minimize(cross_entropy_loss)
-    return (logits, training_operation, cross_entropy_loss)
+    training_operation = optimizer.minimize(loss_operation)
+    return (logits, training_operation, loss_operation)
 tests.test_optimize(optimize)
 
 
@@ -172,10 +170,10 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     for epoch in range(epochs):
         print("Epoch {}".format(epoch))
         for image, label in get_batches_fn(batch_size):
-            print("Batch {} image {} label {}".format(batch_size, len(image), len(label)))
+            #print("Batch {} image {} label {}".format(batch_size, len(image), len(label)))
             _, loss = sess.run([train_op, cross_entropy_loss],
             feed_dict={input_image:image, correct_label:label,
-                               keep_prob:0.5, learning_rate:0.0009})
+                               keep_prob:0.5, learning_rate:0.0001})
             print("Loss = {:.3}".format(loss))
 
 tests.test_train_nn(train_nn)
@@ -208,7 +206,7 @@ def run():
         # OPTIONAL: Augment Images for better results
         #  https://datascience.stackexchange.com/questions/5224/how-to-prepare-augment-images-for-neural-network
 
-        # TODO: Build NN using load_vgg, layers, and optimize function
+        # Build NN using load_vgg, layers, and optimize function
         input_image, keep_prob, l3, l4, l7  = load_vgg(sess, vgg_path)
         nn_last_layer = layers(l3, l4, l7, num_classes)
 
@@ -221,17 +219,25 @@ def run():
                                                         correct_label,
                                                         learning_rate,
                                                         num_classes)
+        # Going to save the trained model
+        saver = tf.train.Saver()
 
-        # TODO: Train NN using the train_nn function
+        # # restore a saved model :
+        # saver.restore(sess, './runs/semantic_seg_model.ckpt')
+
+        # Train NN using the train_nn function
         train_nn(sess, epochs, batch_size, get_batches_fn, train_op,
                  cross_entropy_loss, input_image, correct_label, keep_prob,
                  learning_rate)
 
-        # TODO: Save inference data using helper.save_inference_samples
+        #  Save inference data using helper.save_inference_samples
         helper.save_inference_samples(runs_dir, data_dir, sess, image_shape,
                                       logits, keep_prob, input_image)
 
-        # OPTIONAL: Apply the trained model to a video
+        # # save model
+        saver.save(sess, './runs/semantic_seg_model.ckpt')
+
+# OPTIONAL: Apply the trained model to a video
 
 
 if __name__ == '__main__':
