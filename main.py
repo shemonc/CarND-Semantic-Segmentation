@@ -24,16 +24,17 @@ def load_vgg(sess, vgg_path):
     :param vgg_path: Path to vgg folder, containing "variables/" and "saved_model.pb"
     :return: Tuple of Tensors from VGG model (image_input, keep_prob, layer3_out, layer4_out, layer7_out)
     """
-    # TODO: Implement function
+    # Implement function
     #   Use tf.saved_model.loader.load to load the model and weights
     vgg_tag = 'vgg16'
     tf.saved_model.loader.load(sess, [vgg_tag], vgg_path)
+
     vgg_input_tensor_name = 'image_input:0'
     vgg_keep_prob_tensor_name = 'keep_prob:0'
     vgg_layer3_out_tensor_name = 'layer3_out:0'
     vgg_layer4_out_tensor_name = 'layer4_out:0'
     vgg_layer7_out_tensor_name = 'layer7_out:0'
-    #tf.saved_model.loader.load(sess, [vgg_tag], vgg_path)
+
     graph = tf.get_default_graph()
     w1 = graph.get_tensor_by_name(vgg_input_tensor_name)
     keep_prob = graph.get_tensor_by_name(vgg_keep_prob_tensor_name)
@@ -55,70 +56,125 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     :param num_classes: Number of classes to classify
     :return: The Tensor for the last layer of output
     """
-    #vgg_layer7_out = tf.Print(vgg_layer7_out, [tf.shape(vgg_layer7_out)], "vgg-7")
 
-    # 1x1 convolution of vgg encoder layer 7
+    '''
+    1# input vgg-7, shape [5 5 18 4096]
+    vgg_layer7_out = tf.Print(vgg_layer7_out, [tf.shape(vgg_layer7_out)],
+                              summarize=6, name="vgg-7")
+    '''
+
+    '''
+    2#
+    1x1 convolution of vgg encoder layer 7 as above
+
+    The pretrained VGG-16 model is already fully convolutionalized, i.e. it
+    already contains the 1x1 convolutions that replace the fully connected
+    layers. THOSE 1x1 convolutions are the ones that are used to preserve
+    spatial information that would be lost if we kept the fully connected
+    layers. The purpose of the 1x1 convolutions that we are adding on top
+    of the VGG is merely to reduce the number of filters from 4096 to the
+    number of classes which 2 for our model.
+
+    output shape [5 5 18 2]
+    '''
     conv_1x1 = tf.layers.conv2d(vgg_layer7_out, num_classes, 1, strides=(1,1),
                         padding='same',
                         kernel_initializer=tf.random_normal_initializer(stddev=0.01),
                         kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    '''
+    conv_1x1 = tf.Print(conv_1x1, [tf.shape(conv_1x1)], summarize=6,
+                        name="vgg7conv_1x1")
+    '''
 
-    #conv_1x1 = tf.Print(conv_1x1, [tf.shape(conv_1x1)], "vgg 7 + conv_1x1")
-    #print(conv_1x1.get_shape())
-
-    # Upsample,
+    '''
+    3# Upsample, input shape [5 5 18 2] output shape [5 10 36 2]
+    '''
     output_32 = tf.layers.conv2d_transpose(conv_1x1, num_classes, 4, strides=(2, 2),
                 padding='same',
                 kernel_initializer=tf.random_normal_initializer(stddev=0.01),
                 kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
-    #output_32 = tf.Print(output_32, [tf.shape(output_32)], "upsample 1, stride 2x2")
+    '''
+    output_32 = tf.Print(output_32, [tf.shape(output_32)], summarize=6,
+                         name="First_Upsample")
+    '''
 
-    # 1x1 convolution of vgg pool4 layer to match the shape with above upsample layer
+    '''
+    4# 1x1 convolution of vgg pool4 layer to match the shape with above upsample layer
+    input shape ?  output shape [5 10 36 2]
+    '''
     vgg_layer4_out_1x1 = tf.layers.conv2d(vgg_layer4_out, num_classes, 1,
                  strides=(1,1), padding='same',
                  kernel_initializer=tf.random_normal_initializer(stddev=0.01),
                  kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
-    #vgg_layer4_out_1x1 = tf.Print(vgg_layer4_out_1x1 , [tf.shape(vgg_layer4_out_1x1)],
-    #                                 "pool4 + conv1x1")
+    '''
+    vgg_layer4_out_1x1 = tf.Print(vgg_layer4_out_1x1 , [tf.shape(vgg_layer4_out_1x1)],
+                                   summarize=6, name="pool4conv1x1")
+    '''
 
-    # skip connection, matrix element-wise addition
+    '''
+    5# skip connection, matrix element-wise addition
+    input = output = [5 10 36 2]
+    '''
     output_32_skip = tf.add(output_32, vgg_layer4_out_1x1)
 
-    #output_32_skip = tf.Print(output_32_skip, [tf.shape(output_32_skip)],
-    #                                                            "Skip with pool4")
-
-    #upsample
+    '''
+    output_32_skip = tf.Print(output_32_skip, [tf.shape(output_32_skip)],
+                              summarize=6, name="First_Skip_layer_with_pool4")
+    '''
+    '''
+    6# Second Upsample, input [5 10 36 2] output [5 20 72 2]
+    '''
     output_16 = tf.layers.conv2d_transpose(output_32_skip, num_classes, 4,
                 strides=(2, 2), padding='same',
                 kernel_initializer=tf.random_normal_initializer(stddev=0.01),
                 kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
-    #output_16 = tf.Print(output_16, [tf.shape(output_16)], "upsample 2, stride 2x2")
+    output_16 = tf.Print(output_16, [tf.shape(output_16)], summarize=6,
+                         name="Second_Upsample")
 
-    # 1x1 convolution of vgg pool3 layer to match the shape with above upsample layer
+    '''
+    7# 1x1 convolution of vgg pool3 layer to match the shape with above
+       upsample layer, input shape: ? output shape:[5 20 72 2]
+    '''
+
     vgg_layer3_out_1x1 = tf.layers.conv2d(vgg_layer3_out, num_classes, 1,
                 strides=(1,1), padding='same',
                 kernel_initializer=tf.random_normal_initializer(stddev=0.01),
                 kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
-    #vgg_layer3_out_1x1 = tf.Print(vgg_layer3_out_1x1,
-    #                        [tf.shape(vgg_layer3_out_1x1)], "pool3 + conv1x1")
+    '''
+    vgg_layer3_out_1x1 = tf.Print(vgg_layer3_out_1x1,
+                         [tf.shape(vgg_layer3_out_1x1)], summarize=6,
+                         name="pool3_conv1x1")
+    '''
 
-    # skip connection, matrix element-wise addition
+    '''
+    8# skip connection, matrix element-wise addition
+    input = output shape [5 20 72 2]
+    '''
     output_16_skip = tf.add(output_16, vgg_layer3_out_1x1)
 
-    #output_16_skip = tf.Print(output_16_skip, [tf.shape(output_16_skip)],
-    #                            "Skip with pool3")
+    '''
+    output_16_skip = tf.Print(output_16_skip, [tf.shape(output_16_skip)],
+                                summarize=6, name="Second_Skip_with_pool3")
+    '''
 
+    '''
+    9# Final upsample by 8x8 stride
+    input shape [5 20 72 2], output shape [5 160 576 2]
+    '''
     output_8 = tf.layers.conv2d_transpose(output_16_skip, num_classes, 16,
                 strides=(8, 8),
                 padding='same',
                 kernel_initializer=tf.random_normal_initializer(stddev=0.01),
                 kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
-    #output_8 = tf.Print(output_8, [tf.shape(output_8)], "Final layer FCN-8")
+    '''
+    output_8 = tf.Print(output_8, [tf.shape(output_8)], summarize=6,
+                        name="Final_layer_FCN-8")
+    '''
 
     return output_8
 tests.test_layers(layers)
@@ -133,21 +189,27 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     :param num_classes: Number of classes to classify
     :return: Tuple of (logits, train_op, cross_entropy_loss)
     """
-    # TODO: Implement function
-    #  4D to 2D
+    # Implement function
+    #  4D to 2D reshape
     logits = tf.reshape(nn_last_layer, (-1, num_classes))
     correct_label = tf.reshape(correct_label, (-1, num_classes))
-    cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=logits,
-                                                     labels=correct_label)
-    l2_loss = tf.losses.get_regularization_loss(name='total_regularization_loss')
-    loss_operation = tf.reduce_mean(cross_entropy + l2_loss)
+    cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(
+                                   logits=logits, labels=correct_label))
+
+    # Loss function using L2 Regularization
+    l2_loss = tf.reduce_mean(tf.losses.get_regularization_loss(
+                             name='total_regularization_loss'))
+    # Regularization factor 0.01
+    loss_operation = cross_entropy + 0.01*l2_loss
+
     optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
     training_operation = optimizer.minimize(loss_operation)
     return (logits, training_operation, loss_operation)
 tests.test_optimize(optimize)
 
 
-def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_loss, input_image,
+def train_nn(sess, epochs, batch_size, get_batches_fn, train_op,
+             cross_entropy_loss, input_image,
              correct_label, keep_prob, learning_rate):
     """
     Train neural network and print out the loss during training.
@@ -182,7 +244,7 @@ tests.test_train_nn(train_nn)
 
 def run():
     num_classes = 2
-    epochs = 48
+    epochs = 30 #12 #6
     batch_size = 5
 
     image_shape = (160, 576)
@@ -220,7 +282,7 @@ def run():
                                                         correct_label,
                                                         learning_rate,
                                                         num_classes)
-        # Going to save the trained model
+        # trained model will be saved
         saver = tf.train.Saver()
 
         # # restore a saved model :
