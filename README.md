@@ -78,6 +78,12 @@ std 0.005
 
 ![sample1](images/um_000010.png)
 ![sample2](images/um_000019.png)
+![sample3](images/umm_000034.png)
+![sample4](images/uu_000021.png)
+![sample5](images/uu_000026.png)
+![sample6](images/uu_000027.png)
+![sample7](images/uu_000093.png)
+![sample8](images/uu_000099.png)
 
 
 
