@@ -131,8 +131,10 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
                 kernel_initializer=tf.random_normal_initializer(stddev=0.01),
                 kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
+    '''
     output_16 = tf.Print(output_16, [tf.shape(output_16)], summarize=6,
                          name="Second_Upsample")
+    '''
 
     '''
     7# 1x1 convolution of vgg pool3 layer to match the shape with above
