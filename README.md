@@ -76,8 +76,8 @@ std 0.005
 
 ### Sample Classified Images
 
-[image1]: ./images/um_000010.png
-[image2]: ./images/um_000019.png
+![sample1]:(./images/um_000010.png)
+![sample2]:(./images/um_000019.png)
 
 
 
