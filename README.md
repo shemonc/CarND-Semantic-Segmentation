@@ -1,11 +1,90 @@
+#TBD
+
+
 # Semantic Segmentation
 ### Introduction
-In this project, you'll label the pixels of a road in images using a Fully Convolutional Network (FCN).
+Goal of this project, is to label the pixels of a road in images using a Fully Convolutional Network (FCN) for Semantic  Segmentatin basd on a VGG net (encoder and decoder) developed [here ](https://people.eecs.berkeley.edu/~jonlong/long_shelhamer_fcn.pdf), train and test this model on KITTI data set
+
+### Architecture
+
+A fully convolutional version of VGG16 (ENCODER), which already contains the 1x1 convolutions to replace the fully connected layers in order to preserve the spatial information.
+
+### Decoder implementation FCN8
+1. input the last layer of vgg16 encoder which is layer 7, shape [5 5 18 4096]
+2. 1x1 convolution of vgg encoder layer 7
+    The pretrained VGG-16 model is already fully convolutionalized, i.e. it
+    already contains the 1x1 convolutions that replace the fully connected
+    layers. THOSE 1x1 convolutions are the ones that are used to preserve
+    spatial information that would be lost if we kept the fully connected
+    layers. The purpose of the 1x1 convolutions that we are adding on top
+    of the VGG is merely to reduce the number of filters from 4096 to the
+    number of classes which 2(road or not road) for our model.
+    output shape [5 5 18 2]
+3. Upsample the output from step 2 above with a strides of 2 and kernel size of 4.
+   output shape [5 10 36 2] for this layer
+4. Apply 1x1 convolution of vgg pool4 layer to match the shape with above upsample layer
+   which is [5 10 36 2]
+5. Add convoluted vgg pool4 with upsample layer at step 3. above, this is calld skip connection.
+   Skip connections allow the network to use information from multiple resolutions, as a result
+   the network is able to make more precise segmentation decision.
+6. Second Upsample, input [5 10 36 2] output [5 20 72 2]
+7. 1x1 convolution of vgg pool3 layer to match the shape with above upsample layer,
+   after convolution output shape [5 20 72 2]
+8. Another skip connection between 6 and 6 above, output shape [5 20 72 2]
+9. Final upsample by 8x8 stride
+   input shape [5 20 72 2], output shape [5 160 576 2] <-- original image size
+
+### Optimizer
+
+I use cross-entropy loss and l2 regularization loss with an Adam optimizer
+
+### Training
+
+#### Hyperparameters
+1. learning rate: 0.0001
+2. keep prob: 0.5 during training.
+3. Epochs: 30
+4. Batch size: 5
+5. l2 regularization at a scale of 1e-3 and a factor of 0.01 of total regularization loss
+
+### Results
+
+Epoch 1
+loss
+mean 0.62984482758620686
+std 0.28933299046219713
+
+Epoch 2
+Loss
+mean 0.19927586206896553
+std 0.042697731952786547
+
+Epoch 10
+loss
+mean 0.055110344827586207
+std 0.01373108340973981
+
+Epoch 20
+loss
+mean 0.03819310344827586
+std 0.0074551269576591181
+
+Epoch 30
+loss
+mean 0.025248275862068962
+std 0.0054472150866073012
+
+### Sample Classified Images
+
+./images/um_000010.png
+./images/um_000019.png
+
+
 
 ### Setup
 ##### Frameworks and Packages
 Make sure you have the following is installed:
- - [Python 3](https://www.python.org/)
+[Python 3](https://www.python.org/)
  - [TensorFlow](https://www.tensorflow.org/)
  - [NumPy](http://www.numpy.org/)
  - [SciPy](https://www.scipy.org/)
