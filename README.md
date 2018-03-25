@@ -49,35 +49,35 @@ I use cross-entropy loss and l2 regularization loss with an Adam optimizer
 
 ### Results
 
-Epoch 1
-loss
-mean 0.62984482758620686
-std 0.28933299046219713
+Epoch 1  
+loss  
+mean 0.629  
+std 0.289  
 
-Epoch 2
-Loss
-mean 0.19927586206896553
-std 0.042697731952786547
+Epoch 2  
+Loss  
+mean 0.199  
+std 0.042  
 
-Epoch 10
-loss
-mean 0.055110344827586207
-std 0.01373108340973981
+Epoch 10  
+loss  
+mean 0.055  
+std 0.013  
 
-Epoch 20
-loss
-mean 0.03819310344827586
-std 0.0074551269576591181
+Epoch 20  
+loss  
+mean 0.038  
+std 0.007  
 
-Epoch 30
-loss
-mean 0.025248275862068962
-std 0.0054472150866073012
+Epoch 30  
+loss  
+mean 0.025  
+std 0.005  
 
 ### Sample Classified Images
 
-./images/um_000010.png
-./images/um_000019.png
+[image1]: ./images/um_000010.png
+[image2]: ./images/um_000019.png
 
 
 
