@@ -1,6 +1,3 @@
-#TBD
-
-
 # Semantic Segmentation
 ### Introduction
 Goal of this project, is to label the pixels of a road in images using a Fully Convolutional Network (FCN) for Semantic  Segmentatin basd on a VGG net (encoder and decoder) developed [here ](https://people.eecs.berkeley.edu/~jonlong/long_shelhamer_fcn.pdf), train and test this model on KITTI data set
@@ -14,7 +11,7 @@ A fully convolutional version of VGG16 (ENCODER), which already contains the 1x1
 2. 1x1 convolution of vgg encoder layer 7
     The pretrained VGG-16 model is already fully convolutionalized, i.e. it
     already contains the 1x1 convolutions that replace the fully connected
-    layers. THOSE 1x1 convolutions are the ones that are used to preserve
+    layers. Those 1x1 convolutions are the ones that are used to preserve
     spatial information that would be lost if we kept the fully connected
     layers. The purpose of the 1x1 convolutions that we are adding on top
     of the VGG is merely to reduce the number of filters from 4096 to the
@@ -24,7 +21,7 @@ A fully convolutional version of VGG16 (ENCODER), which already contains the 1x1
    output shape [5 10 36 2] for this layer
 4. Apply 1x1 convolution of vgg pool4 layer to match the shape with above upsample layer
    which is [5 10 36 2]
-5. Add convoluted vgg pool4 with upsample layer at step 3. above, this is calld skip connection.
+5. Add convoluted vgg pool4(step 4 above) with upsample layer at step 3. above; this is calld skip connection.
    Skip connections allow the network to use information from multiple resolutions, as a result
    the network is able to make more precise segmentation decision.
 6. Second Upsample, input [5 10 36 2] output [5 20 72 2]
@@ -48,29 +45,30 @@ I use cross-entropy loss and l2 regularization loss with an Adam optimizer
 5. l2 regularization at a scale of 1e-3 and a factor of 0.01 of total regularization loss
 
 ### Results
+![sample20](images/loss_vs_epoch.png)  
 
-Epoch 1  
-loss  
+Epoch 1
+loss (max:1.81 min:0.2389)  
 mean 0.629  
 std 0.289  
 
 Epoch 2  
-Loss  
+Loss  (max:0.349 min: 0.12)  
 mean 0.199  
 std 0.042  
 
 Epoch 10  
-loss  
+loss  (max:0.134 min:0.034) 
 mean 0.055  
 std 0.013  
 
 Epoch 20  
-loss  
+loss  (max:0.057 min:0.025) 
 mean 0.038  
 std 0.007  
 
 Epoch 30  
-loss  
+loss  (max:0.0385 min:0.0146) 
 mean 0.025  
 std 0.005  
 
@@ -84,6 +82,12 @@ std 0.005
 ![sample6](images/uu_000027.png)
 ![sample7](images/uu_000093.png)
 ![sample8](images/uu_000099.png)
+
+
+The project labels most pixels of roads close to the best solution. The did not predict correctly for all pixel of a image (road or not road) , but most of them was correct.
+
+I could have lower the learning rate from 0.0001 to 0.00001 for even slower but more precise learning with more epochs > 30 but 
+I think with 0.025 loss within epoch 30 is reasonable to segment the images between road or not road and was done pretty nicely.
 
 
 
